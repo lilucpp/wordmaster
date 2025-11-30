@@ -176,6 +176,13 @@ void MainWindow::onNavigationClicked(int index) {
         case 2: // 复习
             if (!currentBookId_.isEmpty()) {
                 reviewWidget_->setBookId(currentBookId_);
+            } else {
+                // 尝试获取激活的词库
+                auto activeBook = bookService_->getActiveBook();
+                if (!activeBook.id.isEmpty()) {
+                    currentBookId_ = activeBook.id;
+                    reviewWidget_->setBookId(currentBookId_);
+                }
             }
             break;
         case 3: // 统计

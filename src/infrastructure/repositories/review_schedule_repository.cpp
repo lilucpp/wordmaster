@@ -91,7 +91,7 @@ QList<int> ReviewScheduleRepository::getTodayReviewWords(const QString& bookId) 
         WHERE book_id = ?
           AND next_review_date <= DATE('now')
           AND mastery_level < 2
-        ORDER BY next_review_date ASC
+        ORDER BY next_review_date ASC, repetition_count ASC
     )";
     
     auto query = adapter_.prepare(sql);
@@ -105,6 +105,8 @@ QList<int> ReviewScheduleRepository::getTodayReviewWords(const QString& bookId) 
     while (query.next()) {
         wordIds.append(query.value("word_id").toInt());
     }
+    
+    qDebug() << "Today review words for" << bookId << ":" << wordIds.size();
     
     return wordIds;
 }
