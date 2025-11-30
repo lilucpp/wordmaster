@@ -29,7 +29,7 @@ TEST_F(SM2AlgorithmTest, FirstReview_QualityGood_ReturnsInterval1) {
     // 第一次复习，间隔应该是 1 天
     EXPECT_EQ(result.interval, 1);
     EXPECT_EQ(result.repetitionCount, 1);
-    EXPECT_NEAR(result.easinessFactor, 2.5, 0.2);
+    EXPECT_NEAR(result.easinessFactor, 2.5, 0.1);
 }
 
 // ============================================
@@ -50,7 +50,7 @@ TEST_F(SM2AlgorithmTest, SecondReview_QualityGood_ReturnsInterval6) {
 TEST_F(SM2AlgorithmTest, ThirdReview_QualityGood_UsesEFMultiplier) {
     // 第二次复习后状态：interval=6, EF=2.5, reps=2
     auto result = calculate(6, 2.5, 2, ReviewQuality::Good);
-
+    
     // I(3) = I(2) * EF = 6 * 2.5 = 15
     EXPECT_EQ(result.interval, 15);
     EXPECT_EQ(result.repetitionCount, 3);
@@ -69,14 +69,16 @@ TEST_F(SM2AlgorithmTest, QualityEasy_IncreasesEF) {
 }
 
 // ============================================
-// 测试：质量 Hard (2) - EF 降低
+// 测试：质量 Hard (3) - EF 降低但继续复习
 // ============================================
-TEST_F(SM2AlgorithmTest, QualityHard_DecreasesEF) {
-    // interval=6, EF=2.5, reps=2, quality=Hard(2)
+TEST_F(SM2AlgorithmTest, QualityHard_DecreasesEF_ButContinues) {
+    // interval=6, EF=2.5, reps=2, quality=Hard(3)
     auto result = calculate(6, 2.5, 2, ReviewQuality::Hard);
     
-    // EF 应该降低
-    EXPECT_LT(result.easinessFactor, 2.5);
+    // Hard(3) 依然 >= 3，所以继续复习，但EF会降低
+    EXPECT_LT(result.easinessFactor, 2.5);  // EF 应该降低
+    EXPECT_EQ(result.repetitionCount, 3);    // 复习次数增加
+    EXPECT_GT(result.interval, 0);           // 间隔继续增长
 }
 
 // ============================================
@@ -140,16 +142,20 @@ TEST_F(SM2AlgorithmTest, Interval_GrowsExponentially) {
 TEST_F(SM2AlgorithmTest, EF_ChangesWithQuality) {
     double initialEF = 2.5;
     
-    // Again (0): EF 大幅降低
+    // Again (0): EF 大幅降低，重置间隔
     auto againResult = calculate(6, initialEF, 2, ReviewQuality::Again);
     EXPECT_LT(againResult.easinessFactor, initialEF);
+    EXPECT_EQ(againResult.interval, 1);           // 重置为1天
+    EXPECT_EQ(againResult.repetitionCount, 0);    // 重置复习次数
     
-    // Hard (2): EF 略微降低
+    // Hard (3): EF 略微降低，但继续复习
     auto hardResult = calculate(6, initialEF, 2, ReviewQuality::Hard);
     EXPECT_LT(hardResult.easinessFactor, initialEF);
     EXPECT_GT(hardResult.easinessFactor, againResult.easinessFactor);
+    EXPECT_GT(hardResult.interval, 1);            // 不重置间隔
+    EXPECT_EQ(hardResult.repetitionCount, 3);     // 复习次数增加
     
-    // Good (3): EF 保持或略微增加
+    // Good (4): EF 保持或略微增加
     auto goodResult = calculate(6, initialEF, 2, ReviewQuality::Good);
     EXPECT_NEAR(goodResult.easinessFactor, initialEF, 0.2);
     
@@ -175,8 +181,8 @@ TEST_F(SM2AlgorithmTest, RealWorldScenario_MasteringWord) {
     QList<ReviewEvent> events = {
         {ReviewQuality::Good, 1},    // 第1次：1天
         {ReviewQuality::Good, 6},    // 第2次：6天
-        {ReviewQuality::Good, 15},   // 第3次：12天
-        {ReviewQuality::Hard, 10},   // 第4次：有点忘，间隔缩短
+        {ReviewQuality::Good, 15},   // 第3次：15天
+        {ReviewQuality::Hard, 10},   // 第4次：Hard(3)依然增加，但增幅小
         {ReviewQuality::Good, 20},   // 第5次：恢复正常
         {ReviewQuality::Easy, 40}    // 第6次：很容易，间隔大幅增加
     };

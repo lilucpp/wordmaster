@@ -19,8 +19,8 @@ namespace Application {
  * 
  * 质量评分（0-5）：
  * - 0 - 完全不记得（Again）
- * - 2 - 困难（Hard）
- * - 3 - 良好（Good）
+ * - 3 - 困难（Hard）
+ * - 4 - 良好（Good）
  * - 5 - 简单（Easy）
  */
 class SM2Scheduler {

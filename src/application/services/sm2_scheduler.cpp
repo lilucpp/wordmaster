@@ -20,7 +20,7 @@ void SM2Scheduler::initializeSchedule(int wordId, const QString& bookId) {
     Domain::ReviewPlan plan;
     plan.wordId = wordId;
     plan.bookId = bookId;
-    plan.nextReviewDate = QDate::currentDate();  // 今天就可以复习
+    plan.nextReviewDate = QDate::currentDate().addDays(1);  // 明天开始复习
     plan.reviewInterval = 1;
     plan.repetitionCount = 0;
     plan.easinessFactor = 2.5;  // 默认难度系数
@@ -91,11 +91,11 @@ SM2Scheduler::SM2Result SM2Scheduler::calculateSM2(
     
     // 2. 计算新的间隔
     if (q < 3) {
-        // 回答质量差（Again 或 Hard < 3），重新开始
+        // 回答质量差（Again），重新开始
         result.interval = 1;
         result.repetitionCount = 0;
     } else {
-        // 回答质量好（Good 或 Easy），增加间隔
+        // 回答质量好（Hard/Good/Easy >= 3），增加间隔
         result.repetitionCount = repetitionCount + 1;
         
         if (result.repetitionCount == 1) {

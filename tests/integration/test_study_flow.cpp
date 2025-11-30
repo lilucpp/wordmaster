@@ -271,7 +271,30 @@ TEST_F(StudyFlowIntegrationTest, ReviewSession) {
         service->recordAndNext(learnSession, result);
     }
     
-    // 2. 开始复习会话
+    // 验证：今天学习后，复习计划应该是明天
+    for (int wordId : learnSession.wordIds) {
+        ReviewPlan plan = scheduleRepo->get(wordId);
+        EXPECT_EQ(plan.nextReviewDate, QDate::currentDate().addDays(1));
+    }
+    
+    // 2. 今天不应该有待复习的单词
+    auto reviewSessionToday = service->startSession(
+        "test_cet4",
+        StudyService::StudySession::Review,
+        10
+    );
+    
+    // Assert - 今天刚学的，今天不需要复习
+    EXPECT_EQ(reviewSessionToday.wordIds.size(), 0);
+    
+    // 3. 手动修改复习日期为今天（模拟时间流逝）
+    for (int wordId : learnSession.wordIds) {
+        ReviewPlan plan = scheduleRepo->get(wordId);
+        plan.nextReviewDate = QDate::currentDate();  // 改为今天
+        scheduleRepo->save(plan);
+    }
+    
+    // 4. 现在应该有待复习的单词了
     auto reviewSession = service->startSession(
         "test_cet4",
         StudyService::StudySession::Review,
@@ -280,7 +303,7 @@ TEST_F(StudyFlowIntegrationTest, ReviewSession) {
     
     // Assert
     EXPECT_EQ(reviewSession.type, StudyService::StudySession::Review);
-    EXPECT_EQ(reviewSession.wordIds.size(), 3);  // 今天学的单词今天就要复习
+    EXPECT_EQ(reviewSession.wordIds.size(), 3);
 }
 
 // ============================================
