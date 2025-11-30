@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/resources">
+        <file>database/001_initial_schema.sql</file>
+    </qresource>
+</RCC>

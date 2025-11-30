@@ -53,6 +53,7 @@ file(GLOB_RECURSE PRESENTATION_SOURCES
     "${SRC_DIR}/presentation/*.cpp"
 )
 
+
 # 主程序
 add_executable(${PROJECT_NAME}
     ${SRC_DIR}/main.cpp
@@ -60,6 +61,8 @@ add_executable(${PROJECT_NAME}
     ${INFRASTRUCTURE_SOURCES}
     ${APPLICATION_SOURCES}
     ${PRESENTATION_SOURCES}
+    ${APP_RESOURCES}
+    ${CMAKE_SOURCE_DIR}/resources/resources.qrc
 )
 
 target_link_libraries(${PROJECT_NAME}
