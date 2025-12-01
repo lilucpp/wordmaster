@@ -1,6 +1,15 @@
 # Google Test
-find_package(GTest REQUIRED)
-include_directories(${GTEST_INCLUDE_DIRS})
+
+# auto pull gtest
+include(FetchContent)
+FetchContent_Declare(
+    googletest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_TAG        v1.17.0
+)
+FetchContent_MakeAvailable(googletest)
+
+enable_testing()
 
 # 测试辅助库（共享代码）
 add_library(test_common STATIC
@@ -10,9 +19,16 @@ add_library(test_common STATIC
 target_link_libraries(test_common
     Qt5::Core
     Qt5::Sql
-    ${GTEST_LIBRARIES}
-    pthread
+    gtest        # 改这里
+    gtest_main   # 改这里
 )
+
+if(UNIX)
+    target_link_libraries(test_common
+        pthread
+    )
+endif()
+
 
 # 单元测试
 set(UNIT_TESTS
@@ -36,9 +52,15 @@ foreach(test ${UNIT_TESTS})
         Qt5::Core
         Qt5::Widgets
         Qt5::Sql
-        ${GTEST_LIBRARIES}
+        gtest        # 改这里
+        gtest_main   # 改这里
+    )
+    
+if(UNIX)
+    target_link_libraries(${test_name}
         pthread
     )
+endif()
     
     add_test(NAME ${test_name} COMMAND ${test_name})
 endforeach()
@@ -63,9 +85,14 @@ foreach(test ${INTEGRATION_TESTS})
         Qt5::Core
         Qt5::Widgets
         Qt5::Sql
-        ${GTEST_LIBRARIES}
+        gtest        # 改这里
+        gtest_main   # 改这里
+    )
+if(UNIX)
+    target_link_libraries(${test_name}
         pthread
     )
+endif()
     
     add_test(NAME ${test_name} COMMAND ${test_name})
 endforeach()
