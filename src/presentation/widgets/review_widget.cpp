@@ -38,17 +38,17 @@ void ReviewWidget::setupUI() {
     mainLayout->addWidget(progressBar_);
     
     // 单词卡片（与学习界面相同）
-    auto* cardWidget = new QWidget(this);
-    cardWidget->setStyleSheet(R"(
+    cardWidget_ = new QWidget(this);
+    cardWidget_->setStyleSheet(R"(
         QWidget {
             background-color: white;
             border: 2px solid #e0e0e0;
             border-radius: 10px;
         }
     )");
-    cardWidget->setMinimumHeight(400);
+    cardWidget_->setMinimumHeight(400);
     
-    auto* cardLayout = new QVBoxLayout(cardWidget);
+    auto* cardLayout = new QVBoxLayout(cardWidget_);
     cardLayout->setAlignment(Qt::AlignCenter);
     
     wordLabel_ = new QLabel("", this);
@@ -91,7 +91,32 @@ void ReviewWidget::setupUI() {
     translationText_->setVisible(false);
     cardLayout->addWidget(translationText_);
     
-    mainLayout->addWidget(cardWidget);
+    mainLayout->addWidget(cardWidget_);
+    
+    // 空状态界面
+    emptyWidget_ = new QWidget(this);
+    auto* emptyLayout = new QVBoxLayout(emptyWidget_);
+    
+    auto* emptyIcon = new QLabel("📝", this);
+    emptyIcon->setStyleSheet("font-size: 64px;");
+    emptyIcon->setAlignment(Qt::AlignCenter);
+    emptyLayout->addWidget(emptyIcon);
+    
+    auto* emptyText = new QLabel("暂无需要复习的单词", this);
+    emptyText->setStyleSheet("font-size: 18px; color: #666;");
+    emptyText->setAlignment(Qt::AlignCenter);
+    emptyLayout->addWidget(emptyText);
+    
+    auto* emptySubText = new QLabel("请先在「学习」页面学习新单词", this);
+    emptySubText->setStyleSheet("font-size: 14px; color: #999;");
+    emptySubText->setAlignment(Qt::AlignCenter);
+    emptyLayout->addWidget(emptySubText);
+    
+    mainLayout->addWidget(emptyWidget_);
+    
+    // 初始状态：显示空状态，隐藏卡片
+    cardWidget_->setVisible(false);
+    emptyWidget_->setVisible(true);
     
     // 复习质量按钮（4个）
     auto* buttonLayout = new QHBoxLayout();
@@ -205,8 +230,16 @@ void ReviewWidget::startReviewSession() {
         wordLabel_->setText("暂无需要复习的单词");
         phoneticLabel_->clear();
         statusLabel_->setText("今天没有需要复习的单词，继续学习新单词吧！");
+        
+        // 显示空状态
+        cardWidget_->setVisible(false);
+        emptyWidget_->setVisible(true);
         return;
     }
+    
+    // 切换界面状态
+    emptyWidget_->setVisible(false);
+    cardWidget_->setVisible(true);
     
     updateProgress();
     loadCurrentWord();
@@ -340,6 +373,10 @@ void ReviewWidget::showSummary() {
     wordLabel_->setText("复习完成");
     phoneticLabel_->clear();
     statusLabel_->setText("点击「开始复习」继续");
+    
+    // 显示空状态
+    cardWidget_->setVisible(false);
+    emptyWidget_->setVisible(true);
 }
 
 } // namespace Presentation
