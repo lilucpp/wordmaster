@@ -4,6 +4,8 @@
 #include "entities.h"
 #include <QList>
 #include <QDate>
+#include <QMAP>
+#include <QString>
 #include <memory>
 
 namespace WordMaster {

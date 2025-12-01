@@ -87,7 +87,19 @@ StudyService::SessionSummary StudyService::endSession(
     // 统计本次会话的数据
     for (const Domain::StudyRecord& record : records) {
         // 只统计本次会话开始后的记录
-        if (record.studiedAt.toSecsSinceEpoch() >= session.startTime.toSecsSinceEpoch()) {
+        // 兼容 Qt 版本，取秒级时间戳
+        qint64 studiedAtSecs=0;
+        qint64 sessionStartSecs=0;
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 8, 0)
+        studiedAtSecs = record.studiedAt.toSecsSinceEpoch();
+        sessionStartSecs = session.startTime.toSecsSinceEpoch();
+#else
+        studiedAtSecs = record.studiedAt.toTime_t();
+        sessionStartSecs = session.startTime.toTime_t();
+#endif
+
+        if (studiedAtSecs >= sessionStartSecs) {
             // 检查是否是本次会话的单词
             if (session.wordIds.contains(record.wordId)) {
                 summary.totalWords++;
