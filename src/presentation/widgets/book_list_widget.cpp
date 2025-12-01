@@ -104,7 +104,8 @@ QWidget* BookListWidget::createBookCard(
 {
     auto* card = new QWidget();
     auto* layout = new QVBoxLayout(card);
-    layout->setContentsMargins(10, 10, 10, 10);
+    layout->setContentsMargins(15, 15, 15, 15);  // 增加边距防止重叠
+    layout->setSpacing(8);  // 增加间距
     
     // 标题行
     auto* titleLayout = new QHBoxLayout();
@@ -129,13 +130,15 @@ QWidget* BookListWidget::createBookCard(
     
     // 开始学习按钮
     auto* studyBtn = new QPushButton("开始学习");
+    studyBtn->setMinimumHeight(32);  // 确保按钮高度足够
     studyBtn->setStyleSheet(R"(
         QPushButton {
             background-color: #2196f3;
             color: white;
             border: none;
-            padding: 5px 15px;
+            padding: 8px 15px;
             border-radius: 3px;
+            min-height: 32px;
         }
         QPushButton:hover {
             background-color: #1976d2;

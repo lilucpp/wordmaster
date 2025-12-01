@@ -62,7 +62,7 @@ file(GLOB_RECURSE PRESENTATION_SOURCES
 
 
 # 主程序
-add_executable(${PROJECT_NAME}
+set(PROJECT_SOURCES
     ${SRC_DIR}/main.cpp
     ${DOMAIN_SOURCES}
     ${INFRASTRUCTURE_SOURCES}
@@ -71,6 +71,13 @@ add_executable(${PROJECT_NAME}
     ${APP_RESOURCES}
     ${CMAKE_SOURCE_DIR}/resources/resources.qrc
 )
+
+if (WIN32)
+    add_executable(${PROJECT_NAME} WIN32 ${PROJECT_SOURCES})
+else()
+    add_executable(${PROJECT_NAME} ${PROJECT_SOURCES})
+endif()
+
 
 target_link_libraries(${PROJECT_NAME}
     Qt5::Core
