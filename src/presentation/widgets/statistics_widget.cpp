@@ -133,14 +133,25 @@ void StatisticsWidget::loadStatistics() {
 }
 
 void StatisticsWidget::refresh() {
-    // 清除旧数据
+    // 获取父布局的引用（在删除widget之前）
+    QLayout* todayParentLayout = todayStatsWidget_->parentWidget()->layout();
+    QLayout* booksParentLayout = booksProgressWidget_->parentWidget()->layout();
+    
+    // 从布局中移除并删除旧widget
+    todayParentLayout->removeWidget(todayStatsWidget_);
+    booksParentLayout->removeWidget(booksProgressWidget_);
     delete todayStatsWidget_;
     delete booksProgressWidget_;
     
+    // 创建新widget
     todayStatsWidget_ = new QWidget();
     booksProgressWidget_ = new QWidget();
     
-    // 重新加载
+    // 重新添加到父布局
+    todayParentLayout->addWidget(todayStatsWidget_);
+    booksParentLayout->addWidget(booksProgressWidget_);
+    
+    // 重新加载数据
     loadStatistics();
 }
 
