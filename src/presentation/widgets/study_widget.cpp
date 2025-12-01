@@ -37,17 +37,17 @@ void StudyWidget::setupUI() {
     mainLayout->addWidget(progressBar_);
     
     // 单词卡片
-    auto* cardWidget = new QWidget(this);
-    cardWidget->setStyleSheet(R"(
+    cardWidget_ = new QWidget(this);
+    cardWidget_->setStyleSheet(R"(
         QWidget {
             background-color: white;
             border: 2px solid #e0e0e0;
             border-radius: 10px;
         }
     )");
-    cardWidget->setMinimumHeight(400);
+    cardWidget_->setMinimumHeight(400);
     
-    auto* cardLayout = new QVBoxLayout(cardWidget);
+    auto* cardLayout = new QVBoxLayout(cardWidget_);
     cardLayout->setAlignment(Qt::AlignCenter);
     
     // 单词
@@ -100,7 +100,27 @@ void StudyWidget::setupUI() {
     translationText_->setVisible(false);
     cardLayout->addWidget(translationText_);
     
-    mainLayout->addWidget(cardWidget);
+    mainLayout->addWidget(cardWidget_);
+    
+    // 空状态界面
+    emptyWidget_ = new QWidget(this);
+    auto* emptyLayout = new QVBoxLayout(emptyWidget_);
+    
+    auto* emptyIcon = new QLabel("📚", this);
+    emptyIcon->setStyleSheet("font-size: 64px;");
+    emptyIcon->setAlignment(Qt::AlignCenter);
+    emptyLayout->addWidget(emptyIcon);
+    
+    auto* emptyText = new QLabel("请从左侧「词库管理」选择一个词库开始学习", this);
+    emptyText->setStyleSheet("font-size: 18px; color: #666;");
+    emptyText->setAlignment(Qt::AlignCenter);
+    emptyLayout->addWidget(emptyText);
+    
+    mainLayout->addWidget(emptyWidget_);
+    
+    // 初始状态：显示空状态，隐藏卡片
+    cardWidget_->setVisible(false);
+    emptyWidget_->setVisible(true);
     
     // 标签按钮
     auto* tagLayout = new QHBoxLayout();
@@ -203,6 +223,10 @@ void StudyWidget::startNewSession() {
         QMessageBox::information(this, "完成", "该词库所有单词已学完！");
         return;
     }
+    
+    // 切换界面状态
+    emptyWidget_->setVisible(false);
+    cardWidget_->setVisible(true);
     
     updateProgress();
     loadCurrentWord();
@@ -392,6 +416,10 @@ void StudyWidget::showSummary() {
     unknownButton_->setEnabled(false);
     knownButton_->setEnabled(false);
     statusLabel_->setText("点击「开始学习」继续学习");
+    
+    // 显示空状态
+    cardWidget_->setVisible(false);
+    emptyWidget_->setVisible(true);
 }
 
 } // namespace Presentation

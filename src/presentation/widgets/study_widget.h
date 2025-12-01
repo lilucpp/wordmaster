@@ -61,6 +61,8 @@ private:
     bool translationVisible_;
     
     // UI 组件
+    QWidget* cardWidget_;
+    QWidget* emptyWidget_;
     QLabel* titleLabel_;
     QProgressBar* progressBar_;
     QLabel* wordLabel_;
