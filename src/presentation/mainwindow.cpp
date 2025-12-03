@@ -3,6 +3,7 @@
 #include "widgets/study_widget.h"
 #include "widgets/review_widget.h"
 #include "widgets/statistics_widget.h"
+#include "widgets/notebook_widget.h"
 
 #include <QApplication>
 #include <QHBoxLayout>
@@ -80,6 +81,7 @@ void MainWindow::setupNavigation() {
     navigationList_->addItem("📚 词库管理");
     navigationList_->addItem("📖 学习");
     navigationList_->addItem("🔄 复习");
+    navigationList_->addItem("📝 我的词本");
     navigationList_->addItem("📊 统计");
     
     navigationList_->setCurrentRow(0);
@@ -88,14 +90,16 @@ void MainWindow::setupNavigation() {
 void MainWindow::setupContentArea() {
     // 创建各个页面
     bookListWidget_ = new BookListWidget(bookService_.get(), this);
-    studyWidget_ = new StudyWidget(studyService_.get(), wordRepo_.get(), this);
+    studyWidget_ = new StudyWidget(studyService_.get(), wordRepo_.get(), tagService_.get(), this);
     reviewWidget_ = new ReviewWidget(studyService_.get(), wordRepo_.get(), this);
+    notebookWidget_ = new NotebookWidget(tagService_.get(), wordRepo_.get(), this);
     statsWidget_ = new StatisticsWidget(bookService_.get(), recordRepo_.get(), this);
     
     // 添加到堆栈
     contentStack_->addWidget(bookListWidget_);
     contentStack_->addWidget(studyWidget_);
     contentStack_->addWidget(reviewWidget_);
+    contentStack_->addWidget(notebookWidget_);
     contentStack_->addWidget(statsWidget_);
 }
 
@@ -145,11 +149,13 @@ void MainWindow::initializeDatabase() {
     wordRepo_ = std::make_unique<WordRepository>(*adapter_);
     recordRepo_ = std::make_unique<StudyRecordRepository>(*adapter_);
     scheduleRepo_ = std::make_unique<ReviewScheduleRepository>(*adapter_);
+    tagRepo_ = std::make_unique<WordTagRepository>(*adapter_);
     
     // 创建服务
     bookService_ = std::make_unique<BookService>(*bookRepo_, *wordRepo_);
     scheduler_ = std::make_unique<SM2Scheduler>(*scheduleRepo_);
     studyService_ = std::make_unique<StudyService>(*wordRepo_, *recordRepo_, *scheduler_);
+    tagService_ = std::make_unique<TagService>(*tagRepo_);
 }
 
 void MainWindow::loadInitialData() {

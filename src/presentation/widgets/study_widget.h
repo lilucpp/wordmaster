@@ -7,6 +7,7 @@
 #include <QTextEdit>
 #include <QProgressBar>
 #include "application/services/study_service.h"
+#include "application/services/tag_service.h"
 #include "domain/repositories.h"
 
 namespace WordMaster {
@@ -26,6 +27,7 @@ class StudyWidget : public QWidget {
 public:
     explicit StudyWidget(Application::StudyService* service,
                         Domain::IWordRepository* wordRepo,
+                        Application::TagService* tagService,
                         QWidget* parent = nullptr);
 
     void setBookId(const QString& bookId);
@@ -37,6 +39,8 @@ private slots:
     void onUnknown();
     void onPrevious();
     void onNext();
+    void onToggleDifficult();
+    void onToggleFavorite();
 
 private:
     void setupUI();
@@ -47,6 +51,7 @@ private:
 
     Application::StudyService* service_;
     Domain::IWordRepository* wordRepo_;
+    Application::TagService* tagService_;
     
     // 当前状态
     QString bookId_;
@@ -67,6 +72,8 @@ private:
     QPushButton* prevButton_;
     QPushButton* nextButton_;
     QLabel* statusLabel_;
+    QPushButton* difficultButton_;
+    QPushButton* favoriteButton_;
 };
 
 } // namespace Presentation
