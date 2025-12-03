@@ -1,4 +1,7 @@
 #include "study_widget.h"
+
+#include <QColor>
+#include <QGraphicsDropShadowEffect>
 #include <QHBoxLayout>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -6,6 +9,13 @@
 #include <QMessageBox>
 #include <QTime>
 #include <QVBoxLayout>
+
+namespace {
+const QString kAccent = "#2d8cff";
+const QString kDanger = "#ef4444";
+const QString kSuccess = "#16a34a";
+const QString kMuted = "#94a3b8";
+}
 
 namespace WordMaster {
 namespace Presentation {
@@ -20,77 +30,97 @@ StudyWidget::StudyWidget(Application::StudyService *service,
 
 void StudyWidget::setupUI() {
   auto *mainLayout = new QVBoxLayout(this);
-  mainLayout->setSpacing(20);
+  mainLayout->setContentsMargins(24, 24, 24, 24);
+  mainLayout->setSpacing(18);
 
-  // 标题和进度
-  titleLabel_ = new QLabel("学习新单词", this);
+  titleLabel_ = new QLabel(QStringLiteral("学习新单词"), this);
   titleLabel_->setStyleSheet(
-      "font-size: 24px; font-weight: bold; color: #2c3e50;");
+      "font-size: 24px; font-weight: 700; color: #0f172a;");
   mainLayout->addWidget(titleLabel_);
 
   progressBar_ = new QProgressBar(this);
   progressBar_->setTextVisible(true);
+  progressBar_->setStyleSheet(QString(R"(
+        QProgressBar {
+            background: #e9eef5;
+            border: none;
+            border-radius: 8px;
+            padding: 0 6px;
+            height: 14px;
+            color: #0f172a;
+            font-weight: 600;
+        }
+        QProgressBar::chunk {
+            background: %1;
+            border-radius: 8px;
+        }
+    )").arg(kAccent));
   mainLayout->addWidget(progressBar_);
 
-  // 单词卡片
   cardWidget_ = new QWidget(this);
+  cardWidget_->setObjectName("wordCard");
   cardWidget_->setStyleSheet(R"(
-        QWidget {
-            background-color: white;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
+        QWidget#wordCard {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
         }
     )");
-  cardWidget_->setMinimumHeight(400);
+  cardWidget_->setMinimumHeight(380);
+
+  auto *shadow = new QGraphicsDropShadowEffect(cardWidget_);
+  shadow->setBlurRadius(18);
+  shadow->setOffset(0, 8);
+  shadow->setColor(QColor(15, 23, 42, 22));
+  cardWidget_->setGraphicsEffect(shadow);
 
   auto *cardLayout = new QVBoxLayout(cardWidget_);
   cardLayout->setAlignment(Qt::AlignCenter);
+  cardLayout->setContentsMargins(24, 24, 24, 24);
+  cardLayout->setSpacing(12);
 
-  // 单词
   wordLabel_ = new QLabel("", this);
   wordLabel_->setStyleSheet(R"(
         font-size: 48px;
-        font-weight: bold;
-        color: #1976d2;
+        font-weight: 800;
+        color: #0f172a;
     )");
   wordLabel_->setAlignment(Qt::AlignCenter);
   cardLayout->addWidget(wordLabel_);
 
-  // 音标
   phoneticLabel_ = new QLabel("", this);
-  phoneticLabel_->setStyleSheet("font-size: 18px; color: #666;");
+  phoneticLabel_->setStyleSheet("font-size: 18px; color: #475569;");
   phoneticLabel_->setAlignment(Qt::AlignCenter);
   cardLayout->addWidget(phoneticLabel_);
 
-  cardLayout->addSpacing(30);
+  cardLayout->addSpacing(20);
 
-  // 显示释义按钮
-  showButton_ = new QPushButton("显示释义 ↓", this);
-  showButton_->setStyleSheet(R"(
+  showButton_ = new QPushButton(QStringLiteral("显示释义 →"), this);
+  showButton_->setCursor(Qt::PointingHandCursor);
+  showButton_->setStyleSheet(QString(R"(
         QPushButton {
-            background-color: #4caf50;
+            background: %1;
             color: white;
             border: none;
-            padding: 10px 30px;
-            border-radius: 5px;
+            padding: 12px 32px;
+            border-radius: 12px;
             font-size: 16px;
+            font-weight: 700;
         }
-        QPushButton:hover {
-            background-color: #45a049;
-        }
-    )");
+        QPushButton:hover { background: #2375e1; }
+        QPushButton:pressed { background: #1e63c0; }
+    )").arg(kAccent));
   cardLayout->addWidget(showButton_, 0, Qt::AlignCenter);
 
-  // 释义区域（初始隐藏）
   translationText_ = new QTextEdit(this);
   translationText_->setReadOnly(true);
   translationText_->setStyleSheet(R"(
         QTextEdit {
-            border: 1px solid #e0e0e0;
-            border-radius: 5px;
-            padding: 15px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
             font-size: 14px;
-            background-color: #f8f9fa;
+            background-color: #f8fafc;
         }
     )");
   translationText_->setVisible(false);
@@ -98,43 +128,72 @@ void StudyWidget::setupUI() {
 
   mainLayout->addWidget(cardWidget_);
 
-  // 空状态界面
   emptyWidget_ = new QWidget(this);
   auto *emptyLayout = new QVBoxLayout(emptyWidget_);
+  emptyLayout->setContentsMargins(24, 24, 24, 24);
+  emptyLayout->setSpacing(6);
 
-  auto *emptyIcon = new QLabel("📚", this);
-  emptyIcon->setStyleSheet("font-size: 64px;");
+  auto *emptyIcon = new QLabel(QStringLiteral("📚"), this);
+  emptyIcon->setStyleSheet("font-size: 46px;");
   emptyIcon->setAlignment(Qt::AlignCenter);
   emptyLayout->addWidget(emptyIcon);
 
   auto *emptyText =
-      new QLabel("请从左侧「词库管理」选择一个词库开始学习", this);
-  emptyText->setStyleSheet("font-size: 18px; color: #666;");
+      new QLabel(QStringLiteral("请从左侧「词库管理」选择一个词库开始学习"), this);
+  emptyText->setStyleSheet("font-size: 18px; color: #0f172a;");
   emptyText->setAlignment(Qt::AlignCenter);
   emptyLayout->addWidget(emptyText);
 
+  auto *emptySub =
+      new QLabel(QStringLiteral("导入或选择词库后即可开始当日学习。"), this);
+  emptySub->setStyleSheet("font-size: 14px; color: #94a3b8;");
+  emptySub->setAlignment(Qt::AlignCenter);
+  emptyLayout->addWidget(emptySub);
+
   mainLayout->addWidget(emptyWidget_);
 
-  // 初始状态：显示空状态，隐藏卡片
   cardWidget_->setVisible(false);
   emptyWidget_->setVisible(true);
 
-  // 标签按钮
   auto *tagLayout = new QHBoxLayout();
 
-  difficultButton_ = new QPushButton("📝 生词本", this);
+  difficultButton_ = new QPushButton(QStringLiteral("生词本"), this);
   difficultButton_->setCheckable(true);
-  difficultButton_->setStyleSheet(R"(
-        QPushButton { background-color: #fff; border: 1px solid #ddd; padding: 8px 15px; border-radius: 3px; }
-        QPushButton:checked { background-color: #ff9800; color: white; border-color: #ff9800; }
-    )");
+  difficultButton_->setCursor(Qt::PointingHandCursor);
+  difficultButton_->setStyleSheet(QString(R"(
+        QPushButton {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            padding: 8px 14px;
+            border-radius: 10px;
+            color: #475569;
+            font-weight: 600;
+        }
+        QPushButton:checked {
+            background: #fffbeb;
+            border-color: #fbbf24;
+            color: #92400e;
+        }
+    )"));
 
-  favoriteButton_ = new QPushButton("⭐ 收藏", this);
+  favoriteButton_ = new QPushButton(QStringLiteral("收藏"), this);
   favoriteButton_->setCheckable(true);
-  favoriteButton_->setStyleSheet(R"(
-        QPushButton { background-color: #fff; border: 1px solid #ddd; padding: 8px 15px; border-radius: 3px; }
-        QPushButton:checked { background-color: #ffc107; color: white; border-color: #ffc107; }
-    )");
+  favoriteButton_->setCursor(Qt::PointingHandCursor);
+  favoriteButton_->setStyleSheet(QString(R"(
+        QPushButton {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            padding: 8px 14px;
+            border-radius: 10px;
+            color: #475569;
+            font-weight: 600;
+        }
+        QPushButton:checked {
+            background: #fef3c7;
+            border-color: #f59e0b;
+            color: #92400e;
+        }
+    )"));
 
   tagLayout->addStretch();
   tagLayout->addWidget(difficultButton_);
@@ -143,39 +202,40 @@ void StudyWidget::setupUI() {
 
   mainLayout->addLayout(tagLayout);
 
-  // 操作按钮
   auto *buttonLayout = new QHBoxLayout();
 
-  unknownButton_ = new QPushButton("❌ 不认识", this);
-  unknownButton_->setStyleSheet(R"(
+  unknownButton_ = new QPushButton(QStringLiteral("不认识"), this);
+  unknownButton_->setCursor(Qt::PointingHandCursor);
+  unknownButton_->setStyleSheet(QString(R"(
         QPushButton {
-            background-color: #f44336;
+            background: %1;
             color: white;
             border: none;
-            padding: 15px 40px;
-            border-radius: 5px;
+            padding: 14px 36px;
+            border-radius: 12px;
             font-size: 16px;
+            font-weight: 700;
         }
-        QPushButton:hover {
-            background-color: #da190b;
-        }
-    )");
+        QPushButton:hover { background: #d92d20; }
+        QPushButton:pressed { background: #b42318; }
+    )").arg(kDanger));
   unknownButton_->setEnabled(false);
 
-  knownButton_ = new QPushButton("✅ 认识", this);
-  knownButton_->setStyleSheet(R"(
+  knownButton_ = new QPushButton(QStringLiteral("认识"), this);
+  knownButton_->setCursor(Qt::PointingHandCursor);
+  knownButton_->setStyleSheet(QString(R"(
         QPushButton {
-            background-color: #4caf50;
+            background: %1;
             color: white;
             border: none;
-            padding: 15px 40px;
-            border-radius: 5px;
+            padding: 14px 36px;
+            border-radius: 12px;
             font-size: 16px;
+            font-weight: 700;
         }
-        QPushButton:hover {
-            background-color: #45a049;
-        }
-    )");
+        QPushButton:hover { background: #16a34a; }
+        QPushButton:pressed { background: #15803d; }
+    )").arg(kSuccess));
   knownButton_->setEnabled(false);
 
   buttonLayout->addStretch();
@@ -185,13 +245,12 @@ void StudyWidget::setupUI() {
 
   mainLayout->addLayout(buttonLayout);
 
-  // 状态栏
-  statusLabel_ = new QLabel("请点击「开始学习」", this);
-  statusLabel_->setStyleSheet("color: #666; font-size: 14px;");
+  statusLabel_ = new QLabel(QStringLiteral("点击「开始学习」后按记忆情况标记"), this);
+  statusLabel_->setStyleSheet(
+      QString("color: %1; font-size: 14px;").arg(kMuted));
   statusLabel_->setAlignment(Qt::AlignCenter);
   mainLayout->addWidget(statusLabel_);
 
-  // 连接信号
   connect(showButton_, &QPushButton::clicked, this,
           &StudyWidget::onShowTranslation);
   connect(unknownButton_, &QPushButton::clicked, this, &StudyWidget::onUnknown);
@@ -206,20 +265,20 @@ void StudyWidget::setBookId(const QString &bookId) { bookId_ = bookId; }
 
 void StudyWidget::startNewSession() {
   if (bookId_.isEmpty()) {
-    QMessageBox::warning(this, "提示", "请先选择一个词库");
+    QMessageBox::warning(this, QStringLiteral("提示"),
+                         QStringLiteral("请先选择一个词库"));
     return;
   }
 
-  // 开始新会话（每次20个单词）
   session_ = service_->startSession(
       bookId_, Application::StudyService::StudySession::NewWords, 5);
 
   if (session_.wordIds.isEmpty()) {
-    QMessageBox::information(this, "完成", "该词库所有单词已学完！");
+    QMessageBox::information(this, QStringLiteral("完成"),
+                             QStringLiteral("该词库所有单词已学习完毕"));
     return;
   }
 
-  // 切换界面状态
   emptyWidget_->setVisible(false);
   cardWidget_->setVisible(true);
 
@@ -233,39 +292,26 @@ void StudyWidget::loadCurrentWord() {
     return;
   }
 
-  // 加载当前单词
   currentWord_ = service_->getCurrentWord(session_);
 
   if (currentWord_.word.isEmpty()) {
-    QMessageBox::warning(this, "错误", "加载单词失败");
+    QMessageBox::warning(this, QStringLiteral("错误"),
+                         QStringLiteral("加载单词失败"));
     return;
   }
 
-  // 重置卡片
   resetCard();
-
-  // 显示单词
   wordLabel_->setText(currentWord_.word);
-
-  // 显示音标（仅美音）
   phoneticLabel_->setText(currentWord_.phoneticUs);
 
-  // 更新标签按钮状态
-  difficultButton_->setChecked(
-      tagService_->hasTag(currentWord_.id, Domain::WordTag::TAG_DIFFICULT));
-  favoriteButton_->setChecked(
-      tagService_->hasTag(currentWord_.id, Domain::WordTag::TAG_FAVORITE));
-
-  // 记录开始时间
   wordStartTime_ = QTime::currentTime();
-
-  // 更新状态
-  statusLabel_->setText("请先回忆该单词的含义，然后点击「显示释义」");
+  statusLabel_->setText(QStringLiteral("请先回忆该单词的含义"));
 }
 
 void StudyWidget::resetCard() {
   translationVisible_ = false;
   translationText_->setVisible(false);
+  translationText_->clear();
   showButton_->setVisible(true);
   unknownButton_->setEnabled(false);
   knownButton_->setEnabled(false);
@@ -278,15 +324,13 @@ void StudyWidget::onShowTranslation() {
 
   translationVisible_ = true;
 
-  // 解析并显示释义
   QString content;
 
-  // 释义
   QJsonDocument transDoc =
       QJsonDocument::fromJson(currentWord_.translations.toUtf8());
   if (transDoc.isArray()) {
     QJsonArray transArray = transDoc.array();
-    content += "<h3>释义：</h3><ul>";
+    content += "<h3 style='margin:0 0 8px 0;'>释义</h3><ul>";
     for (const QJsonValue &val : transArray) {
       QJsonObject obj = val.toObject();
       QString pos = obj["pos"].toString();
@@ -296,18 +340,18 @@ void StudyWidget::onShowTranslation() {
     content += "</ul>";
   }
 
-  // 例句
   QJsonDocument sentDoc =
       QJsonDocument::fromJson(currentWord_.sentences.toUtf8());
   if (sentDoc.isArray()) {
     QJsonArray sentArray = sentDoc.array();
     if (!sentArray.isEmpty()) {
-      content += "<h3>例句：</h3>";
+      content += "<h3 style='margin:12px 0 8px 0;'>例句</h3>";
       for (const QJsonValue &val : sentArray) {
         QJsonObject obj = val.toObject();
         QString en = obj["c"].toString();
         QString cn = obj["cn"].toString();
-        content += QString("<p><i>%1</i><br/>%2</p>").arg(en, cn);
+        content += QString("<p style='margin:6px 0;'><i>%1</i><br/>%2</p>")
+                       .arg(en, cn);
       }
     }
   }
@@ -316,18 +360,15 @@ void StudyWidget::onShowTranslation() {
   translationText_->setVisible(true);
   showButton_->setVisible(false);
 
-  // 启用按钮
   unknownButton_->setEnabled(true);
   knownButton_->setEnabled(true);
 
-  statusLabel_->setText("请标记是否认识该单词");
+  statusLabel_->setText(QStringLiteral("请标记是否认识该单词"));
 }
 
 void StudyWidget::onKnown() {
-  // 计算学习时长
   int duration = wordStartTime_.secsTo(QTime::currentTime());
 
-  // 记录结果
   Application::StudyService::StudyResult result;
   result.wordId = currentWord_.id;
   result.bookId = bookId_;
@@ -336,16 +377,13 @@ void StudyWidget::onKnown() {
 
   service_->recordAndNext(session_, result);
 
-  // 更新进度并加载下一个
   updateProgress();
   loadCurrentWord();
 }
 
 void StudyWidget::onUnknown() {
-  // 计算学习时长
   int duration = wordStartTime_.secsTo(QTime::currentTime());
 
-  // 记录结果
   Application::StudyService::StudyResult result;
   result.wordId = currentWord_.id;
   result.bookId = bookId_;
@@ -354,7 +392,6 @@ void StudyWidget::onUnknown() {
 
   service_->recordAndNext(session_, result);
 
-  // 更新进度并加载下一个
   updateProgress();
   loadCurrentWord();
 }
@@ -387,35 +424,33 @@ void StudyWidget::updateProgress() {
   progressBar_->setValue(progress);
   progressBar_->setFormat(QString("%1 / %2").arg(progress).arg(total));
 
-  titleLabel_->setText(QString("学习新单词 (%1/%2)").arg(progress).arg(total));
+  titleLabel_->setText(QStringLiteral("学习新单词 (%1/%2)").arg(progress).arg(total));
 }
 
 void StudyWidget::showSummary() {
   auto summary = service_->endSession(session_);
 
-  QString message = QString("本次学习完成！\n\n"
-                            "学习单词数：%1\n"
-                            "认识：%2\n"
-                            "不认识：%3\n"
-                            "学习时长：%4 秒")
+  QString message = QStringLiteral("本次学习完成！\n\n"
+                                   "学习单词数：%1\n"
+                                   "认识：%2\n"
+                                   "不认识：%3\n"
+                                   "学习时长：%4 秒")
                         .arg(summary.totalWords)
                         .arg(summary.knownWords)
                         .arg(summary.unknownWords)
                         .arg(summary.totalDuration);
 
-  QMessageBox::information(this, "学习完成", message);
+  QMessageBox::information(this, QStringLiteral("学习完成"), message);
 
-  // 重置界面
-  wordLabel_->setText("学习完成");
+  wordLabel_->setText(QStringLiteral("学习完成"));
   phoneticLabel_->clear();
   translationText_->clear();
   translationText_->setVisible(false);
   showButton_->setVisible(false);
   unknownButton_->setEnabled(false);
   knownButton_->setEnabled(false);
-  statusLabel_->setText("点击「开始学习」继续学习");
+  statusLabel_->setText(QStringLiteral("点击「开始学习」继续"));
 
-  // 显示空状态
   cardWidget_->setVisible(false);
   emptyWidget_->setVisible(true);
 }

@@ -1,158 +1,225 @@
 #include "statistics_widget.h"
-#include <QVBoxLayout>
-#include <QHBoxLayout>
+
 #include <QGroupBox>
+#include <QHBoxLayout>
+#include <QLabel>
 #include <QProgressBar>
+#include <QVBoxLayout>
+
+namespace {
+const QString kAccent = "#2d8cff";
+const QString kSuccess = "#16a34a";
+const QString kMuted = "#94a3b8";
+}
 
 namespace WordMaster {
 namespace Presentation {
 
-StatisticsWidget::StatisticsWidget(Application::BookService* bookService,
-                                  Domain::IStudyRecordRepository* recordRepo,
-                                  QWidget* parent)
-    : QWidget(parent)
-    , bookService_(bookService)
-    , recordRepo_(recordRepo)
-{
-    setupUI();
-    loadStatistics();
+StatisticsWidget::StatisticsWidget(Application::BookService *bookService,
+                                   Domain::IStudyRecordRepository *recordRepo,
+                                   QWidget *parent)
+    : QWidget(parent), bookService_(bookService), recordRepo_(recordRepo) {
+  setupUI();
+  loadStatistics();
 }
 
 void StatisticsWidget::setupUI() {
-    auto* mainLayout = new QVBoxLayout(this);
-    
-    // 标题
-    titleLabel_ = new QLabel("学习统计", this);
-    titleLabel_->setStyleSheet("font-size: 24px; font-weight: bold; color: #2c3e50;");
-    mainLayout->addWidget(titleLabel_);
-    
-    // 今日统计
-    auto* todayGroup = new QGroupBox("今日概览", this);
-    todayGroup->setStyleSheet("QGroupBox { font-size: 16px; font-weight: bold; }");
-    todayStatsWidget_ = new QWidget(todayGroup);
-    auto* todayLayout = new QVBoxLayout(todayGroup);
-    todayLayout->addWidget(todayStatsWidget_);
-    mainLayout->addWidget(todayGroup);
-    
-    // 词库进度
-    auto* booksGroup = new QGroupBox("词库进度", this);
-    booksGroup->setStyleSheet("QGroupBox { font-size: 16px; font-weight: bold; }");
-    booksProgressWidget_ = new QWidget(booksGroup);
-    auto* booksLayout = new QVBoxLayout(booksGroup);
-    booksLayout->addWidget(booksProgressWidget_);
-    mainLayout->addWidget(booksGroup);
-    
-    mainLayout->addStretch();
+  auto *mainLayout = new QVBoxLayout(this);
+  mainLayout->setContentsMargins(24, 24, 24, 24);
+  mainLayout->setSpacing(18);
+
+  titleLabel_ = new QLabel(QStringLiteral("学习统计"), this);
+  titleLabel_->setStyleSheet(
+      "font-size: 26px; font-weight: 700; color: #0f172a;");
+  mainLayout->addWidget(titleLabel_);
+
+  auto *todayGroup = new QGroupBox(QStringLiteral("今日概览"), this);
+  todayGroup->setStyleSheet(R"(
+        QGroupBox {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 16px;
+            margin-top: 12px;
+        }
+        QGroupBox::title {
+            subcontrol-origin: margin;
+            left: 12px;
+            padding: 0 6px;
+        }
+    )");
+  todayStatsWidget_ = new QWidget(todayGroup);
+  auto *todayLayout = new QVBoxLayout(todayGroup);
+  todayLayout->setContentsMargins(8, 16, 8, 8);
+  todayLayout->addWidget(todayStatsWidget_);
+  mainLayout->addWidget(todayGroup);
+
+  auto *booksGroup = new QGroupBox(QStringLiteral("词库进度"), this);
+  booksGroup->setStyleSheet(R"(
+        QGroupBox {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
+            background-color: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 16px;
+            margin-top: 12px;
+        }
+        QGroupBox::title {
+            subcontrol-origin: margin;
+            left: 12px;
+            padding: 0 6px;
+        }
+    )");
+  booksProgressWidget_ = new QWidget(booksGroup);
+  auto *booksLayout = new QVBoxLayout(booksGroup);
+  booksLayout->setContentsMargins(8, 16, 8, 8);
+  booksLayout->addWidget(booksProgressWidget_);
+  mainLayout->addWidget(booksGroup);
+
+  mainLayout->addStretch();
 }
 
 void StatisticsWidget::loadStatistics() {
-    // 今日统计
-    auto todayRecords = recordRepo_->getTodayRecords();
-    int learnCount = 0;
-    int reviewCount = 0;
-    int totalDuration = 0;
-    
-    for (const auto& record : todayRecords) {
-        if (record.studyType == Domain::StudyRecord::Type::Learn) {
-            learnCount++;
-        } else if (record.studyType == Domain::StudyRecord::Type::Review) {
-            reviewCount++;
-        }
-        totalDuration += record.studyDuration;
+  auto todayRecords = recordRepo_->getTodayRecords();
+  int learnCount = 0;
+  int reviewCount = 0;
+  int totalDuration = 0;
+
+  for (const auto &record : todayRecords) {
+    if (record.studyType == Domain::StudyRecord::Type::Learn) {
+      learnCount++;
+    } else if (record.studyType == Domain::StudyRecord::Type::Review) {
+      reviewCount++;
     }
-    
-    // 显示今日统计
-    auto* todayLayout = new QHBoxLayout(todayStatsWidget_);
-    
-    auto* learnLabel = new QLabel(QString("📖 新学: %1").arg(learnCount));
-    learnLabel->setStyleSheet("font-size: 18px; padding: 10px;");
-    todayLayout->addWidget(learnLabel);
-    
-    auto* reviewLabel = new QLabel(QString("🔄 复习: %1").arg(reviewCount));
-    reviewLabel->setStyleSheet("font-size: 18px; padding: 10px;");
-    todayLayout->addWidget(reviewLabel);
-    
-    auto* durationLabel = new QLabel(QString("⏱️ 时长: %1分钟")
-        .arg(totalDuration / 60));
-    durationLabel->setStyleSheet("font-size: 18px; padding: 10px;");
-    todayLayout->addWidget(durationLabel);
-    
-    todayLayout->addStretch();
-    
-    // 词库进度
-    auto* booksLayout = new QVBoxLayout(booksProgressWidget_);
-    auto statsList = bookService_->getAllBooksStatistics();
-    
-    for (const auto& stats : statsList) {
-        auto* bookWidget = new QWidget();
-        auto* bookLayout = new QVBoxLayout(bookWidget);
-        
-        // 词库名称和统计
-        auto* infoLayout = new QHBoxLayout();
-        auto* nameLabel = new QLabel(stats.bookName);
-        nameLabel->setStyleSheet("font-size: 14px; font-weight: bold;");
-        infoLayout->addWidget(nameLabel);
-        
-        auto* statsLabel = new QLabel(QString("%1 / %2 (掌握: %3)")
-            .arg(stats.learnedWords)
-            .arg(stats.totalWords)
-            .arg(stats.masteredWords));
-        statsLabel->setStyleSheet("color: #666;");
-        infoLayout->addWidget(statsLabel);
-        infoLayout->addStretch();
-        
-        bookLayout->addLayout(infoLayout);
-        
-        // 进度条
-        auto* progressBar = new QProgressBar();
-        progressBar->setRange(0, 100);
-        progressBar->setValue(static_cast<int>(stats.progress * 100));
-        progressBar->setTextVisible(true);
-        progressBar->setFormat(QString("%1%").arg(static_cast<int>(stats.progress * 100)));
-        progressBar->setStyleSheet(R"(
+    totalDuration += record.studyDuration;
+  }
+
+  auto *todayLayout = new QHBoxLayout(todayStatsWidget_);
+  todayLayout->setSpacing(12);
+
+  auto makeStatCard = [](const QString &title, const QString &value,
+                         const QString &badgeColor) {
+    auto *card = new QWidget();
+    card->setStyleSheet(QString(R"(
+            QWidget {
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+            }
+        )"));
+    auto *layout = new QVBoxLayout(card);
+    layout->setContentsMargins(14, 14, 14, 14);
+    layout->setSpacing(6);
+
+    auto *titleLabel = new QLabel(title);
+    titleLabel->setStyleSheet(
+        "font-size: 13px; color: #475569; font-weight: 600;");
+
+    auto *valueLabel = new QLabel(value);
+    valueLabel->setStyleSheet("font-size: 28px; font-weight: 800; "
+                              "color: #0f172a;");
+
+    auto *badge = new QLabel(" ");
+    badge->setFixedHeight(4);
+    badge->setStyleSheet(
+        QString("background: %1; border-radius: 2px;").arg(badgeColor));
+
+    layout->addWidget(titleLabel);
+    layout->addWidget(valueLabel);
+    layout->addWidget(badge);
+    layout->addStretch();
+    return card;
+  };
+
+  todayLayout->addWidget(makeStatCard(QStringLiteral("新学"), QString::number(learnCount), kAccent));
+  todayLayout->addWidget(makeStatCard(QStringLiteral("复习"), QString::number(reviewCount), "#f59e0b"));
+  todayLayout->addWidget(
+      makeStatCard(QStringLiteral("专注分钟"), QString::number(totalDuration / 60),
+                   kSuccess));
+  todayLayout->addStretch();
+
+  auto *booksLayout = new QVBoxLayout(booksProgressWidget_);
+  booksLayout->setSpacing(10);
+  auto statsList = bookService_->getAllBooksStatistics();
+
+  for (const auto &stats : statsList) {
+    auto *bookWidget = new QWidget();
+    bookWidget->setStyleSheet(
+        "background: #ffffff; border: 1px solid #e2e8f0; "
+        "border-radius: 12px;");
+    auto *bookLayout = new QVBoxLayout(bookWidget);
+    bookLayout->setContentsMargins(12, 12, 12, 12);
+    bookLayout->setSpacing(6);
+
+    auto *infoLayout = new QHBoxLayout();
+    auto *nameLabel = new QLabel(stats.bookName);
+    nameLabel->setStyleSheet("font-size: 15px; font-weight: 700; color: #0f172a;");
+    infoLayout->addWidget(nameLabel);
+
+    auto *statsLabel =
+        new QLabel(QStringLiteral("已学 %1 / %2 · 掌握 %3")
+                       .arg(stats.learnedWords)
+                       .arg(stats.totalWords)
+                       .arg(stats.masteredWords));
+    statsLabel->setStyleSheet("color: #475569; font-size: 13px;");
+    infoLayout->addWidget(statsLabel);
+    infoLayout->addStretch();
+
+    bookLayout->addLayout(infoLayout);
+
+    auto *progressBar = new QProgressBar();
+    progressBar->setRange(0, 100);
+    int progress = static_cast<int>(stats.progress * 100);
+    progressBar->setValue(progress);
+    progressBar->setTextVisible(true);
+    progressBar->setFormat(QString("%1%").arg(progress));
+    progressBar->setStyleSheet(QString(R"(
             QProgressBar {
-                border: 1px solid #ddd;
-                border-radius: 3px;
-                text-align: center;
-                height: 20px;
+                border: none;
+                background: #e9eef5;
+                border-radius: 8px;
+                height: 14px;
+                color: #0f172a;
+                font-weight: 600;
             }
             QProgressBar::chunk {
-                background-color: #4caf50;
+                background: %1;
+                border-radius: 8px;
             }
-        )");
-        bookLayout->addWidget(progressBar);
-        
-        booksLayout->addWidget(bookWidget);
-    }
-    
-    if (statsList.isEmpty()) {
-        auto* emptyLabel = new QLabel("暂无数据");
-        emptyLabel->setStyleSheet("color: #999;");
-        booksLayout->addWidget(emptyLabel);
-    }
+        )").arg(kAccent));
+    bookLayout->addWidget(progressBar);
+
+    booksLayout->addWidget(bookWidget);
+  }
+
+  if (statsList.isEmpty()) {
+    auto *emptyLabel = new QLabel(QStringLiteral("暂无数据"));
+    emptyLabel->setStyleSheet(QString("color: %1;").arg(kMuted));
+    booksLayout->addWidget(emptyLabel);
+  }
 }
 
 void StatisticsWidget::refresh() {
-    // 获取父布局的引用（在删除widget之前）
-    QLayout* todayParentLayout = todayStatsWidget_->parentWidget()->layout();
-    QLayout* booksParentLayout = booksProgressWidget_->parentWidget()->layout();
-    
-    // 从布局中移除并删除旧widget
-    todayParentLayout->removeWidget(todayStatsWidget_);
-    booksParentLayout->removeWidget(booksProgressWidget_);
-    delete todayStatsWidget_;
-    delete booksProgressWidget_;
-    
-    // 创建新widget
-    todayStatsWidget_ = new QWidget();
-    booksProgressWidget_ = new QWidget();
-    
-    // 重新添加到父布局
-    todayParentLayout->addWidget(todayStatsWidget_);
-    booksParentLayout->addWidget(booksProgressWidget_);
-    
-    // 重新加载数据
-    loadStatistics();
+  QLayout *todayParentLayout = todayStatsWidget_->parentWidget()->layout();
+  QLayout *booksParentLayout = booksProgressWidget_->parentWidget()->layout();
+
+  todayParentLayout->removeWidget(todayStatsWidget_);
+  booksParentLayout->removeWidget(booksProgressWidget_);
+  delete todayStatsWidget_;
+  delete booksProgressWidget_;
+
+  todayStatsWidget_ = new QWidget();
+  booksProgressWidget_ = new QWidget();
+
+  todayParentLayout->addWidget(todayStatsWidget_);
+  booksParentLayout->addWidget(booksProgressWidget_);
+
+  loadStatistics();
 }
 
 } // namespace Presentation
