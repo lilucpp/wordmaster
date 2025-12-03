@@ -12,10 +12,12 @@ namespace Presentation {
 
 StudyWidget::StudyWidget(Application::StudyService* service,
                         Domain::IWordRepository* wordRepo,
+                        Application::TagService* tagService,
                         QWidget* parent)
     : QWidget(parent)
     , service_(service)
     , wordRepo_(wordRepo)
+    , tagService_(tagService)
     , translationVisible_(false)
 {
     setupUI();
@@ -100,6 +102,30 @@ void StudyWidget::setupUI() {
     
     mainLayout->addWidget(cardWidget);
     
+    // 标签按钮
+    auto* tagLayout = new QHBoxLayout();
+    
+    difficultButton_ = new QPushButton("📝 生词本", this);
+    difficultButton_->setCheckable(true);
+    difficultButton_->setStyleSheet(R"(
+        QPushButton { background-color: #fff; border: 1px solid #ddd; padding: 8px 15px; border-radius: 3px; }
+        QPushButton:checked { background-color: #ff9800; color: white; border-color: #ff9800; }
+    )");
+    
+    favoriteButton_ = new QPushButton("⭐ 收藏", this);
+    favoriteButton_->setCheckable(true);
+    favoriteButton_->setStyleSheet(R"(
+        QPushButton { background-color: #fff; border: 1px solid #ddd; padding: 8px 15px; border-radius: 3px; }
+        QPushButton:checked { background-color: #ffc107; color: white; border-color: #ffc107; }
+    )");
+    
+    tagLayout->addStretch();
+    tagLayout->addWidget(difficultButton_);
+    tagLayout->addWidget(favoriteButton_);
+    tagLayout->addStretch();
+    
+    mainLayout->addLayout(tagLayout);
+    
     // 操作按钮
     auto* buttonLayout = new QHBoxLayout();
     
@@ -152,6 +178,8 @@ void StudyWidget::setupUI() {
     connect(showButton_, &QPushButton::clicked, this, &StudyWidget::onShowTranslation);
     connect(unknownButton_, &QPushButton::clicked, this, &StudyWidget::onUnknown);
     connect(knownButton_, &QPushButton::clicked, this, &StudyWidget::onKnown);
+    connect(difficultButton_, &QPushButton::clicked, this, &StudyWidget::onToggleDifficult);
+    connect(favoriteButton_, &QPushButton::clicked, this, &StudyWidget::onToggleFavorite);
 }
 
 void StudyWidget::setBookId(const QString& bookId) {
@@ -314,6 +342,18 @@ void StudyWidget::onPrevious() {
 
 void StudyWidget::onNext() {
     // TODO: 实现跳过功能
+}
+
+void StudyWidget::onToggleDifficult() {
+    if (currentWord_.id > 0) {
+        tagService_->toggleTag(currentWord_.id, Domain::WordTag::TAG_DIFFICULT);
+    }
+}
+
+void StudyWidget::onToggleFavorite() {
+    if (currentWord_.id > 0) {
+        tagService_->toggleTag(currentWord_.id, Domain::WordTag::TAG_FAVORITE);
+    }
 }
 
 void StudyWidget::updateProgress() {

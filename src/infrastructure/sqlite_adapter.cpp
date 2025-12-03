@@ -191,7 +191,11 @@ QStringList splitSqlStatements(const QString &sqlContent)
     // 3. 重新组合，并按 ; 分割 SQL 语句
     QString joined = noCommentLines.join('\n');
 
-    QStringList rawStatements = joined.split(';', Qt::SkipEmptyParts);
+    #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+        QStringList rawStatements= joined.split(';', Qt::SkipEmptyParts);
+    #else
+        QStringList rawStatements = joined.split(';', QString::SkipEmptyParts);
+    #endif
 
     // 4. 去空白
     QStringList statements;
