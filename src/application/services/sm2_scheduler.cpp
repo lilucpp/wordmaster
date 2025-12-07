@@ -20,13 +20,17 @@ void SM2Scheduler::initializeSchedule(int wordId, const QString& bookId) {
     Domain::ReviewPlan plan;
     plan.wordId = wordId;
     plan.bookId = bookId;
-    plan.nextReviewDate = QDate::currentDate().addDays(1);  // 明天开始复习
+    // 新学习的单词，当天就可以复习（立即复习模式）
+    plan.nextReviewDate = QDate::currentDate();
     plan.reviewInterval = 1;
     plan.repetitionCount = 0;
     plan.easinessFactor = 2.5;  // 默认难度系数
     plan.masteryLevel = Domain::ReviewPlan::MasteryLevel::Learning;
     
     repo_.save(plan);
+    
+    qDebug() << "Initialized schedule for word" << wordId 
+             << "next review:" << plan.nextReviewDate.toString();
 }
 
 void SM2Scheduler::updateSchedule(int wordId, Domain::ReviewQuality quality) {

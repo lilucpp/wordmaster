@@ -35,12 +35,19 @@ StudyService::StudySession StudyService::startSession(
         // 复习：获取今日待复习的单词
         session.wordIds = scheduler_.getTodayReviewWords(bookId);
         
+        qDebug() << "Found" << session.wordIds.size() << "words to review for book:" << bookId;
+        
         // 限制数量
         if (session.wordIds.size() > maxWords) {
             session.wordIds = session.wordIds.mid(0, maxWords);
         }
         
         qDebug() << "Starting review session:" << session.wordIds.size() << "words";
+        
+        // 调试：打印前5个单词ID
+        if (!session.wordIds.isEmpty()) {
+            qDebug() << "First word IDs:" << session.wordIds.mid(0, qMin(5, session.wordIds.size()));
+        }
     }
     
     return session;
@@ -79,9 +86,6 @@ StudyService::SessionSummary StudyService::endSession(
     
     // 统计本次会话的数据
     for (const Domain::StudyRecord& record : records) {
-        //qDebug().noquote() << record.studiedAt.toString("yyyy-MM-dd hh:mm:ss");
-        //qDebug().noquote() << session.startTime.toString("yyyy-MM-dd hh:mm:ss");
-
         // 只统计本次会话开始后的记录
         if (record.studiedAt.toSecsSinceEpoch() >= session.startTime.toSecsSinceEpoch()) {
             // 检查是否是本次会话的单词
@@ -167,6 +171,9 @@ bool StudyService::recordStudyResult(const StudyResult& result,
         
         scheduler_.updateSchedule(result.wordId, quality);
     }
+    
+    qDebug() << "Recorded study result for word" << result.wordId 
+             << "known:" << result.known;
     
     return true;
 }

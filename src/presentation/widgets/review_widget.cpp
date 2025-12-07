@@ -182,11 +182,16 @@ void ReviewWidget::setupUI() {
 
 void ReviewWidget::setBookId(const QString& bookId) {
     bookId_ = bookId;
+    
+    // 自动开始复习会话
+    startReviewSession();
 }
 
 void ReviewWidget::startReviewSession() {
     if (bookId_.isEmpty()) {
-        QMessageBox::warning(this, "提示", "请先选择一个词库");
+        wordLabel_->setText("请先选择词库");
+        phoneticLabel_->clear();
+        statusLabel_->setText("在词库管理页面选择一个词库");
         return;
     }
     
@@ -197,7 +202,9 @@ void ReviewWidget::startReviewSession() {
     );
     
     if (session_.wordIds.isEmpty()) {
-        QMessageBox::information(this, "提示", "今天没有需要复习的单词！");
+        wordLabel_->setText("暂无需要复习的单词");
+        phoneticLabel_->clear();
+        statusLabel_->setText("今天没有需要复习的单词，继续学习新单词吧！");
         return;
     }
     
